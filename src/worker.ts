@@ -22,7 +22,7 @@ import {RpcProvider} from "worker-rpc";
 const wasmPromise = fetch("/assets/wormhole.wasm");
 let rpc: RpcProvider | undefined = undefined;
 
-const bufferSize = 1024 * 4 // 4KiB
+const bufferSize = 16384 // to match the sending side buffersize
 // const bufferSize = (1024 ** 2) * 2 // 2MiB
 let port: MessagePort;
 let client: Client;
