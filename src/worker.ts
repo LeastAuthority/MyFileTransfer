@@ -22,7 +22,7 @@ import {RpcProvider} from "worker-rpc";
 const wasmPromise = fetch("/assets/wormhole.wasm");
 let rpc: RpcProvider | undefined = undefined;
 
-const bufferSize = 1024 * 4 // 4KiB
+const bufferSize = 16384 // to match the sending side buffersize
 // const bufferSize = (1024 ** 2) * 2 // 2MiB
 let port: MessagePort;
 let client: Client;
@@ -30,7 +30,7 @@ let client: Client;
 const receiving: Record<number, any> = {};
 
 // TODO: be more specific about types!
-async function handleSendFile({id, name, buffer}: RPCMessage): Promise<Record<string, any>> {
+async function handleSendFile({id, name, file}: RPCMessage): Promise<Record<string, any>> {
     const sendProgressCb = (sentBytes: number, totalBytes: number): void => {
         rpc!.rpc(SEND_FILE_PROGRESS, {
             id,
@@ -39,16 +39,9 @@ async function handleSendFile({id, name, buffer}: RPCMessage): Promise<Record<st
         });
     };
 
-    const _file = {
-        name,
-        arrayBuffer(): Promise<ArrayBuffer> {
-            return Promise.resolve(buffer);
-        }
-    };
-
     // TODO: change signature to expect array buffer or Uint8Array?
     return new Promise((resolve, reject) => {
-        client.sendFile(_file as File, {progressFunc: sendProgressCb})
+        client.sendFile(file, {progressFunc: sendProgressCb})
             .then(({code, done}: TransferProgress) => {
                 done.then(() => {
                     rpc!.signal(SEND_FILE_RESULT_OK, {id});
